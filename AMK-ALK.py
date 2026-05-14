@@ -66,4 +66,4 @@ def solve_exactly_k(n, k):
     print(f"\nTổng cộng: {count} cách (C({n},{k}) = {comb(n, k)})")
 
 # Chạy thử
-solve_exactly_k(6, 2)
+solve_exactly_k(7,3)

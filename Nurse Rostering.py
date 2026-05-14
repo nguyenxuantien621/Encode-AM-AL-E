@@ -1,26 +1,25 @@
 import math
 from pysat.solvers import Glucose3
 
-# 1. QUẢN LÝ ID BIẾN PHỤ (Cải tiến với Label để tránh chồng chéo)
+# QUẢN LÝ ID 
 class IDManager:
     def __init__(self, start_id):
         self.dictionary_id = {}
         self.next_id = start_id
 
-    def get_id(self, label, width, block_idx, pos, current_sum):
-        # Key kết hợp Nhãn và Độ rộng để tạo không gian biến phụ riêng biệt
+    def get_id(self, label, width, block_idx, pos, current_sum): 
         key = f"{label}_W{width}_B{block_idx}_P{pos}_S{current_sum}"
         if key not in self.dictionary_id:
             self.dictionary_id[key] = self.next_id
             self.next_id += 1
         return self.dictionary_id[key]
 
-# 2. HÀM TRUY XUẤT BIẾN CHÍNH
+#  BIẾN CHÍNH
 def get_var_id(day, shift_type):
     shift_map = {'D': 0, 'E': 1, 'N': 2, 'O': 3}
     return (day * 4) + shift_map[shift_type] + 1
 
-# 3. MÃ HÓA AMK (Giữ nguyên logic của bạn nhưng thêm Label)
+#  AMK
 def AMK(g, block, number_block, k, label, width, id_manager):
     w = len(block)
     for j in range(0, w - 1): 
@@ -88,19 +87,17 @@ def sc_amk_Ladder(g, vars_list, k, width, label, id_manager):
     for i in range(n_areas - 1):
         connect_areas(g, i, i + 1, k, width, label, id_manager)
 
-# 4. HÀM BỔ TRỢ RÀNG BUỘC CƠ BẢN
+# Ex-one
 def add_exactly_one_constraint(g, var_list):
     g.add_clause(var_list)
     for i in range(len(var_list)):
         for j in range(i + 1, len(var_list)):
             g.add_clause([-var_list[i], -var_list[j]])
 
-# 5. HÀM THIẾT LẬP RÀNG BUỘC CHO EN (Evening/Night)
-# Vì bài toán yêu cầu đếm tổng (E hoặc N), ta cần biến trung gian
+#  RÀNG BUỘC CHO EN (Evening/Night)
 def get_en_vars(g, total_days, id_manager):
     en_vars = []
     for d in range(total_days):
-        # Biến trung gian: EN_d <=> E_d OR N_d
         en_id = id_manager.next_id
         id_manager.next_id += 1
         e_id = get_var_id(d, 'E')
@@ -112,19 +109,19 @@ def get_en_vars(g, total_days, id_manager):
         en_vars.append(en_id)
     return en_vars
 
-# 6. MAIN EXECUTION
+# Main để chạy thử
 def main():
     solver = Glucose3()
     days = 28
     max_main_id = days * 4
     id_manager = IDManager(max_main_id + 1)
 
-    # Ràng buộc 1: Mỗi ngày đúng 1 ca (Đã bao gồm At most 1)
+    # Ràng buộc 1: Mỗi ngày đúng 1 ca 
     for d in range(days):
         day_vars = [get_var_id(d, s) for s in ['D', 'E', 'N', 'O']]
         add_exactly_one_constraint(solver, day_vars)
 
-    # Chuẩn bị các tập biến mục tiêu
+    #  các tập biến mục tiêu
     not_off = [-get_var_id(d, 'O') for d in range(days)]
     evening = [get_var_id(d, 'E') for d in range(days)]
     night = [get_var_id(d, 'N') for d in range(days)]
@@ -133,7 +130,7 @@ def main():
     en_vars = get_en_vars(solver, days, id_manager)
     not_en_vars = [-v for v in en_vars]
 
-    # ÁNH XẠ CÁC RÀNG BUỘC TỪ ẢNH
+   
     # 2. Max 6 work / 7 days
     sc_amk_Ladder(solver, not_off, 6, 7, "not_O", id_manager)
     # 3. At least 4 off / 14 days => Max 10 work / 14 days
@@ -156,6 +153,7 @@ def main():
     # 11. Night shifts not successive
     for d in range(days - 1):
         solver.add_clause([-get_var_id(d, 'N'), -get_var_id(d+1, 'N')])
+        #Test
     for d in range(5):
      solver.add_clause([get_var_id(d, 'N')])
     # GIẢI VÀ IN KẾT QUẢ
